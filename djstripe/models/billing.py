@@ -739,6 +739,11 @@ class Invoice(BaseInvoice):
         help_text="The tax rates applied to this invoice, if any.",
     )
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["status"]),
+        ]
+
     def _attach_objects_post_save_hook(self, cls, data, pending_relations=None):
         super()._attach_objects_post_save_hook(
             cls, data, pending_relations=pending_relations
