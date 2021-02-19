@@ -6,12 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djstripe', '0019_add_decimal_places_to_percentage_field'),
+        ("djstripe", "0019_add_decimal_places_to_percentage_field"),
     ]
 
     operations = [
         migrations.AddIndex(
             model_name="invoice",
-            index=models.Index(fields=['status'], name='djstripe_invoice_status_4d27deb1_idx'),
+            index=models.Index(
+                fields=["status"], name="djstripe_invoice_status_4d27deb1_idx"
+            ),
         ),
     ]

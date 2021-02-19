@@ -8,13 +8,21 @@ import djstripe.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djstripe', '0008_auto_20201119_2218'),
+        ("djstripe", "0008_auto_20201119_2218"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='taxrate',
-            name='percentage',
-            field=djstripe.fields.StripePercentField(decimal_places=3, help_text='This represents the tax rate percent out of 100.', max_digits=5, validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(100)]),
+            model_name="taxrate",
+            name="percentage",
+            field=djstripe.fields.StripePercentField(
+                decimal_places=3,
+                help_text="This represents the tax rate percent out of 100.",
+                max_digits=5,
+                validators=[
+                    django.core.validators.MinValueValidator(1),
+                    django.core.validators.MaxValueValidator(100),
+                ],
+            ),
         ),
     ]
