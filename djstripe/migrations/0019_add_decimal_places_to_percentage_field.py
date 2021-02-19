@@ -8,7 +8,7 @@ import djstripe.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djstripe', '0018_customer_default_balance_delinquent'),
+        ('djstripe', '0008_auto_20201119_2218'),
     ]
 
     operations = [
