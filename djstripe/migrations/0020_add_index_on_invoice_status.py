@@ -12,8 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddIndex(
             model_name="invoice",
-            index=models.Index(
-                fields=["status"], name="djstripe_in_status_579158_idx"
-            ),
+            index=models.Index(fields=["status"], name="djstripe_in_status_579158_idx"),
         ),
     ]
