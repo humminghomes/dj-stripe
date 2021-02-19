@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="invoice",
             index=models.Index(
-                fields=["status"], name="djstripe_invoice_status_4d27deb1_idx"
+                fields=["status"], name="djstripe_in_status_579158_idx"
             ),
         ),
     ]
