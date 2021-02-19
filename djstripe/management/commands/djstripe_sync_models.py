@@ -71,8 +71,8 @@ class Command(BaseCommand):
         self.stdout.write("Syncing {}:".format(model_name))
 
         count = 0
-        for list_kwargs in self.get_list_kwargs(model):
-            try:
+        try:
+            for list_kwargs in self.get_list_kwargs(model):
                 if model is models.Account:
                     # special case, since own account isn't returned by Account.api_list
                     stripe_obj = models.Account.stripe_class.retrieve(
@@ -99,8 +99,8 @@ class Command(BaseCommand):
                         )
                     )
 
-            except Exception as e:
-                self.stderr.write(str(e))
+        except Exception as e:
+            self.stderr.write(str(e))
 
         if count == 0:
             self.stdout.write("  (no results)")
@@ -120,14 +120,27 @@ class Command(BaseCommand):
         :param model:
         :return: Sequence[dict]
         """
+        all_list_kwargs = (
+            [{"expand": [f"data.{k}" for k in model.expand_fields]}]
+            if model.expand_fields
+            else []
+        )
         if model is models.PaymentMethod:
             # special case
-            all_list_kwargs = (
-                {"customer": stripe_customer.id, "type": "card"}
-                for stripe_customer in models.Customer.api_list()
+            all_list_kwargs.extend(
+                (
+                    {"customer": stripe_customer.id, "type": "card"}
+                    for stripe_customer in models.Customer.api_list()
+                )
             )
-        else:
-            # one empty dict so we iterate once
-            all_list_kwargs = [{}]
+        elif model is models.SubscriptionItem:
+            all_list_kwargs.extend(
+                (
+                    {"subscription": subscription.id}
+                    for subscription in models.Subscription.api_list()
+                )
+            )
+        elif not all_list_kwargs:
+            all_list_kwargs.append({})
 
         return all_list_kwargs

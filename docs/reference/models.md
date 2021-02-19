@@ -23,7 +23,7 @@ djstripe.models.Charge
 
 ::: djstripe.models.Customer
     :docstring:
-    :members: api_list api_retrieve get_stripe_dashboard_url get_or_create legacy_cards credits customer_payment_methods pending_charges subscribe charge add_invoice_item add_card add_payment_method purge has_active_subscription has_any_active_subscription active_subscriptions valid_subscriptions subscription can_charge send_invoice retry_unpaid_invoices has_valid_source add_coupon upcoming_invoice sync_from_stripe_data
+    :members: api_list api_retrieve get_stripe_dashboard_url get_or_create legacy_cards credits customer_payment_methods pending_charges subscribe charge add_invoice_item add_card add_payment_method purge has_any_active_subscription active_subscriptions valid_subscriptions subscription can_charge send_invoice retry_unpaid_invoices has_valid_source add_coupon upcoming_invoice sync_from_stripe_data
 
 ### Dispute
 
@@ -56,6 +56,12 @@ djstripe.models.Charge
 ::: djstripe.models.PaymentIntent
     :docstring:
     :members: api_list api_retrieve get_stripe_dashboard_url sync_from_stripe_data
+
+### Price
+
+::: djstripe.models.Price
+    :docstring:
+    :members: api_list api_retrieve get_stripe_dashboard_url get_or_create human_readable_price sync_from_stripe_data
 
 ### Product
 
@@ -165,7 +171,7 @@ djstripe.models.Charge
 
 ::: djstripe.models.Account
     :docstring:
-    :members: api_list api_retrieve get_stripe_dashboard_url get_connected_account_from_token get_default_account sync_from_stripe_data
+    :members: api_list api_retrieve get_stripe_dashboard_url get_default_account sync_from_stripe_data
 
 ### Application Fee
 

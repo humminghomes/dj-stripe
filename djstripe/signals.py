@@ -3,10 +3,7 @@ signals are sent for each event Stripe sends to the app
 
 Stripe docs for Webhooks: https://stripe.com/docs/webhooks
 """
-from django.db.models.signals import pre_delete
-from django.dispatch import Signal, receiver
-
-from . import settings as djstripe_settings
+from django.dispatch import Signal
 
 webhook_processing_error = Signal(providing_args=["data", "exception"])
 
@@ -73,8 +70,10 @@ WEBHOOK_SIGNALS = dict(
             "file.created",
             "invoice.created",
             "invoice.deleted",
+            "invoice.finalization_failed",
             "invoice.finalized",
             "invoice.marked_uncollectible",
+            "invoice.paid",
             "invoice.payment_action_required",
             "invoice.payment_failed",
             "invoice.payment_succeeded",
@@ -92,6 +91,11 @@ WEBHOOK_SIGNALS = dict(
             "issuing_card.updated",
             "issuing_cardholder.created",
             "issuing_cardholder.updated",
+            "issuing_dispute.closed",
+            "issuing_dispute.created",
+            "issuing_dispute.funds_reinstated",
+            "issuing_dispute.submitted",
+            "issuing_dispute.updated",
             "issuing_transaction.created",
             "issuing_transaction.updated",
             "mandate.updated",
@@ -105,9 +109,10 @@ WEBHOOK_SIGNALS = dict(
             "payment_intent.created",
             "payment_intent.payment_failed",
             "payment_intent.processing",
+            "payment_intent.requires_action",
             "payment_intent.succeeded",
             "payment_method.attached",
-            "payment_method.card_automatically_updated",
+            "payment_method.automatically_updated",
             "payment_method.detached",
             "payment_method.updated",
             "payout.canceled",
@@ -127,6 +132,8 @@ WEBHOOK_SIGNALS = dict(
             "product.created",
             "product.deleted",
             "product.updated",
+            "promotion_code.created",
+            "promotion_code.updated",
             "radar.early_fraud_warning.created",
             "radar.early_fraud_warning.updated",
             "recipient.created",
@@ -139,6 +146,7 @@ WEBHOOK_SIGNALS = dict(
             "review.opened",
             "setup_intent.canceled",
             "setup_intent.created",
+            "setup_intent.requires_action",
             "setup_intent.setup_failed",
             "setup_intent.succeeded",
             "sigma.scheduled_query_run.created",
@@ -175,11 +183,7 @@ WEBHOOK_SIGNALS = dict(
             "checkout_beta.session_succeeded",
             "issuer_fraud_record.created",
             "payment_intent.requires_capture",
-            "subscription_schedule.canceled",
-            "subscription_schedule.completed",
-            "subscription_schedule.created",
-            "subscription_schedule.released",
-            "subscription_schedule.updated",
+            "payment_method.card_automatically_updated",
             "issuing_dispute.created",
             "issuing_dispute.updated",
             "issuing_settlement.created",
@@ -189,10 +193,3 @@ WEBHOOK_SIGNALS = dict(
         ]
     ]
 )
-
-
-@receiver(pre_delete, sender=djstripe_settings.get_subscriber_model_string())
-def on_delete_subscriber_purge_customer(instance=None, **kwargs):
-    """ Purge associated customers when the subscriber is deleted. """
-    for customer in instance.djstripe_customers.all():
-        customer.purge()

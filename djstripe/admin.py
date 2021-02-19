@@ -6,6 +6,14 @@ from django.contrib import admin
 from . import models
 
 
+class ReadOnlyMixin:
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 def get_forward_relation_fields_for_model(model):
     """Return an iterable of the field names that are forward relations,
     I.E ManyToManyField, OneToOneField, and ForeignKey.
@@ -105,17 +113,14 @@ class CustomerSubscriptionStatusListFilter(admin.SimpleListFilter):
 
 
 @admin.register(models.IdempotencyKey)
-class IdempotencyKeyAdmin(admin.ModelAdmin):
+class IdempotencyKeyAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_display = ("uuid", "action", "created", "is_expired", "livemode")
     list_filter = ("livemode",)
     search_fields = ("uuid", "action")
 
-    def has_add_permission(self, request):
-        return False
-
 
 @admin.register(models.WebhookEventTrigger)
-class WebhookEventTriggerAdmin(admin.ModelAdmin):
+class WebhookEventTriggerAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_display = (
         "created",
         "event",
@@ -136,9 +141,6 @@ class WebhookEventTriggerAdmin(admin.ModelAdmin):
                 continue
 
             trigger.process()
-
-    def has_add_permission(self, request):
-        return False
 
 
 class StripeModelAdmin(admin.ModelAdmin):
@@ -184,6 +186,23 @@ class SubscriptionInline(admin.StackedInline):
     show_change_link = True
 
 
+class TaxIdInline(admin.TabularInline):
+    """A TabularInline for use models.Subscription."""
+
+    model = models.TaxId
+    extra = 0
+    max_num = 5
+    readonly_fields = (
+        "id",
+        "created",
+        "verification",
+        "livemode",
+        "country",
+        "djstripe_owner_account",
+    )
+    show_change_link = True
+
+
 class SubscriptionItemInline(admin.StackedInline):
     """A TabularInline for use models.Subscription."""
 
@@ -213,13 +232,25 @@ class AccountAdmin(StripeModelAdmin):
 
 @admin.register(models.APIKey)
 class APIKeyAdmin(StripeModelAdmin):
-    list_display = ("type",)
+    list_display = ("type", "djstripe_owner_account")
     list_filter = ("type",)
     search_fields = ("name",)
 
+    get_fieldsets = admin.ModelAdmin.get_fieldsets
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        fields.remove("id")
+        fields.remove("created")
+        if obj is None:
+            fields.remove("djstripe_owner_account")
+            fields.remove("type")
+            fields.remove("livemode")
+        return fields
+
 
 @admin.register(models.BalanceTransaction)
-class BalanceTransactionAdmin(StripeModelAdmin):
+class BalanceTransactionAdmin(ReadOnlyMixin, StripeModelAdmin):
     list_display = (
         "type",
         "net",
@@ -230,12 +261,6 @@ class BalanceTransactionAdmin(StripeModelAdmin):
         "status",
     )
     list_filter = ("status", "type")
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(models.Charge)
@@ -282,31 +307,24 @@ class CustomerAdmin(StripeModelAdmin):
         "default_source",
         "coupon",
         "balance",
-        "business_vat_id",
     )
     list_select_related = ("subscriber", "default_source", "coupon")
     list_filter = (CustomerHasSourceListFilter, CustomerSubscriptionStatusListFilter)
     search_fields = ("email", "description")
-    inlines = (SubscriptionInline,)
+    inlines = (SubscriptionInline, TaxIdInline)
 
 
 @admin.register(models.Dispute)
-class DisputeAdmin(StripeModelAdmin):
+class DisputeAdmin(ReadOnlyMixin, StripeModelAdmin):
     list_display = ("reason", "status", "amount", "currency", "is_charge_refundable")
     list_filter = ("is_charge_refundable", "reason", "status")
 
-    def has_add_permission(self, request):
-        return False
-
 
 @admin.register(models.Event)
-class EventAdmin(StripeModelAdmin):
+class EventAdmin(ReadOnlyMixin, StripeModelAdmin):
     list_display = ("type", "request_id")
     list_filter = ("type", "created")
     search_fields = ("request_id",)
-
-    def has_add_permission(self, request):
-        return False
 
 
 @admin.register(models.FileUpload)
@@ -371,13 +389,6 @@ class InvoiceAdmin(StripeModelAdmin):
 class PlanAdmin(StripeModelAdmin):
     radio_fields = {"interval": admin.HORIZONTAL}
 
-    def save_model(self, request, obj, form, change):
-        """Update or create objects using our custom methods that sync with Stripe."""
-        if change:
-            obj.update_name()
-        else:
-            models.Plan.get_or_create(**form.cleaned_data)
-
     def get_readonly_fields(self, request, obj=None):
         """Return extra readonly_fields."""
         readonly_fields = super().get_readonly_fields(request, obj)
@@ -397,7 +408,7 @@ class PlanAdmin(StripeModelAdmin):
 @admin.register(models.Price)
 class PriceAdmin(StripeModelAdmin):
     list_display = ("product", "currency", "active")
-    list_filter = ("active", "type", "aggregate_usage", "billing_scheme", "tiers_mode")
+    list_filter = ("active", "type", "billing_scheme", "tiers_mode")
     raw_id_fields = ("product",)
     search_fields = ("nickname",)
     radio_fields = {"type": admin.HORIZONTAL}
@@ -447,14 +458,14 @@ class SubscriptionAdmin(StripeModelAdmin):
 
     inlines = (SubscriptionItemInline,)
 
-    def cancel_subscription(self, request, queryset):
+    def _cancel(self, request, queryset):
         """Cancel a subscription."""
         for subscription in queryset:
             subscription.cancel()
 
-    cancel_subscription.short_description = "Cancel selected subscriptions"
+    _cancel.short_description = "Cancel selected subscriptions"  # type: ignore # noqa
 
-    actions = (cancel_subscription,)
+    actions = (_cancel,)
 
 
 @admin.register(models.TaxRate)

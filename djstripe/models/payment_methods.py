@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 import stripe
 from django.db import models, transaction
 from stripe.error import InvalidRequestError
@@ -78,6 +80,8 @@ class LegacySourceMixin:
     Mixin for functionality shared between the legacy Card & BankAccount sources
     """
 
+    customer: Optional[StripeForeignKey]
+
     @classmethod
     def _get_customer_from_kwargs(cls, **kwargs):
         if "customer" not in kwargs or not isinstance(kwargs["customer"], Customer):
@@ -119,8 +123,11 @@ class LegacySourceMixin:
             .auto_paging_iter()
         )
 
-    def get_stripe_dashboard_url(self):
-        return self.customer.get_stripe_dashboard_url()
+    def get_stripe_dashboard_url(self) -> str:
+        if self.customer:
+            return self.customer.get_stripe_dashboard_url()
+        else:
+            return ""
 
     def remove(self):
         """
@@ -159,7 +166,7 @@ class LegacySourceMixin:
         if "sources" not in customer:
             # We fake a native stripe InvalidRequestError so that it's caught
             # like an invalid ID error.
-            raise InvalidRequestError("No such source: %s" % (self.id), "id")
+            raise InvalidRequestError(f"No such source: {self.id!r}", "id")
 
         # This will retrieve the source using the account ID where the customer resides,
         # so we don't have to pass `stripe_account`.
@@ -180,7 +187,6 @@ class BankAccount(LegacySourceMixin, StripeModel):
     )
     account_holder_name = models.TextField(
         max_length=5000,
-        default="",
         blank=True,
         help_text="The name of the person or business that owns the bank account.",
     )
@@ -220,6 +226,13 @@ class BankAccount(LegacySourceMixin, StripeModel):
         max_length=255, help_text="The routing transit number for the bank account."
     )
     status = StripeEnumField(enum=enums.BankAccountStatus)
+
+    def api_retrieve(self, **kwargs):
+        if not self.customer:
+            raise NotImplementedError(
+                "Cannot retrieve bank accounts not associated with a customer"
+            )
+        return super().api_retrieve(**kwargs)
 
 
 class Card(LegacySourceMixin, StripeModel):
@@ -337,13 +350,13 @@ class Card(LegacySourceMixin, StripeModel):
     @classmethod
     def create_token(
         cls,
-        number,
-        exp_month,
-        exp_year,
-        cvc,
-        api_key=djstripe_settings.STRIPE_SECRET_KEY,
-        **kwargs
-    ):
+        number: str,
+        exp_month: int,
+        exp_year: int,
+        cvc: str,
+        api_key: str = djstripe_settings.STRIPE_SECRET_KEY,
+        **kwargs,
+    ) -> stripe.Token:
         """
         Creates a single use token that wraps the details of a credit card.
         This token can be used in place of a credit card dictionary with any API method.
@@ -352,16 +365,10 @@ class Card(LegacySourceMixin, StripeModel):
         (Source: https://stripe.com/docs/api/python#create_card_token)
 
         :param number: The card number without any separators (no spaces)
-        :type number: str
         :param exp_month: The card's expiration month. (two digits)
-        :type exp_month: int
         :param exp_year: The card's expiration year. (four digits)
-        :type exp_year: int
         :param cvc: Card security code.
-        :type cvc: str
-        :param api_key:
-        :type api_key: str
-        :rtype: stripe.Token
+        :param api_key: The API key to use
         """
 
         card = {
@@ -466,19 +473,18 @@ class Source(StripeModel):
         data["source_data"] = data[data["type"]]
         return data
 
-    def _attach_objects_hook(self, cls, data):
-        customer = cls._stripe_object_to_customer(target_cls=Customer, data=data)
+    def _attach_objects_hook(self, cls, data, current_ids=None):
+        customer = cls._stripe_object_to_customer(
+            target_cls=Customer, data=data, current_ids=current_ids
+        )
         if customer:
             self.customer = customer
         else:
             self.customer = None
 
-    def detach(self):
+    def detach(self) -> bool:
         """
         Detach the source from its customer.
-
-        :return:
-        :rtype: bool
         """
 
         # First, wipe default source on all customers that use this.
@@ -503,21 +509,14 @@ class PaymentMethod(StripeModel):
     Stripe documentation: https://stripe.com/docs/api#payment_methods
     """
 
+    stripe_class = stripe.PaymentMethod
+    description = None
+
     billing_details = JSONField(
         help_text=(
             "Billing information associated with the PaymentMethod that may be used or "
             "required by particular types of payment methods."
         )
-    )
-    card = JSONField(
-        help_text="If this is a card PaymentMethod, this hash contains details "
-        "about the card."
-    )
-    card_present = JSONField(
-        null=True,
-        blank=True,
-        help_text="If this is an card_present PaymentMethod, this hash contains "
-        "details about the Card Present payment method.",
     )
     customer = StripeForeignKey(
         "Customer",
@@ -525,21 +524,101 @@ class PaymentMethod(StripeModel):
         null=True,
         blank=True,
         related_name="payment_methods",
-        help_text="Customer to which this PaymentMethod is saved."
-        "This will not be set when the PaymentMethod has not been saved to a Customer.",
+        help_text=(
+            "Customer to which this PaymentMethod is saved. "
+            "This will not be set when the PaymentMethod has "
+            "not been saved to a Customer."
+        ),
     )
-    type = models.CharField(
-        max_length=255,
+    type = StripeEnumField(
+        enum=enums.PaymentMethodType,
+        help_text="The type of the PaymentMethod.",
+    )
+    alipay = JSONField(
+        null=True,
         blank=True,
-        help_text="The type of the PaymentMethod. An additional hash is included "
-        "on the PaymentMethod with a name matching this value. It contains additional "
-        "information specific to the PaymentMethod type.",
+        help_text="Additional information for payment methods of type `alipay`",
+    )
+    au_becs_debit = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `au_becs_debit`",
+    )
+    bacs_debit = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `bacs_debit`",
+    )
+    bancontact = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `bancontact`",
+    )
+    card = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `card`",
+    )
+    card_present = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `card_present`",
+    )
+    eps = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `eps`",
+    )
+    fpx = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `fpx`",
+    )
+    giropay = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `giropay`",
+    )
+    ideal = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `ideal`",
+    )
+    interac_present = JSONField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Additional information for payment methods of type `interac_present`"
+        ),
+    )
+    oxxo = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `oxxo`",
+    )
+    p24 = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `p24`",
+    )
+    sepa_debit = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `sepa_debit`",
+    )
+    sofort = JSONField(
+        null=True,
+        blank=True,
+        help_text="Additional information for payment methods of type `sofort`",
     )
 
-    stripe_class = stripe.PaymentMethod
+    def _attach_objects_hook(self, cls, data, current_ids=None):
+        customer = None
+        if current_ids is None or data.get("customer") not in current_ids:
+            customer = cls._stripe_object_to_customer(
+                target_cls=Customer, data=data, current_ids=current_ids
+            )
 
-    def _attach_objects_hook(self, cls, data):
-        customer = cls._stripe_object_to_customer(target_cls=Customer, data=data)
         if customer:
             self.customer = customer
         else:
@@ -547,18 +626,13 @@ class PaymentMethod(StripeModel):
 
     @classmethod
     def attach(
-        cls, payment_method, customer, api_key=djstripe_settings.STRIPE_SECRET_KEY
-    ):
+        cls,
+        payment_method: Union[str, "PaymentMethod"],
+        customer: Union[str, Customer],
+        api_key: str = djstripe_settings.STRIPE_SECRET_KEY,
+    ) -> "PaymentMethod":
         """
         Attach a payment method to a customer
-        :param payment_method:
-        :type payment_method: str, PaymentMethod
-        :param customer:
-        :type customer: Union[str, Customer]
-        :param api_key:
-        :type api_key: str
-        :return:
-        :rtype: PaymentMethod
         """
 
         if isinstance(payment_method, StripeModel):

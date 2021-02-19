@@ -18,34 +18,35 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Sponsors: project/sponsors.md
   - Getting Started:
     - Installation: installation.md
+    - Managing Stripe API Keys: api_keys.md
     - A note on Stripe API Versions: api_versions.md
-    - A note on Stripe Stripe Elements JS methods: stripe_elements_js.md
+    - Integrating Stripe Elements: stripe_elements_js.md
+  - Release notes:
+    - dj-stripe 2.5 release notes: history/2_5_0.md
+    - dj-stripe 2.4.1 release notes: history/2_4_x.md
+    - dj-stripe 2.4 release notes: history/2_4_0.md
+    - dj-stripe 2.0 ~ 2.3 release notes: history/2_x.md
+    - dj-stripe 1.x release notes: history/1_x.md
+    - dj-stripe 0.x release notes: history/0_x.md
   - Usage:
-    - Checking if a customer has a subscription: usage/checking_customer_subscription.md
+    - Using Stripe Webhooks: usage/webhooks.md
     - Subscribing a customer to a plan: usage/subscribing_customers.md
-    - Creating a one-off charge for a customer: usage/one_off_charges.md
-    - Restricting access to only active subscribers: usage/restricting_access.md
     - Managing subscriptions and payment sources: usage/managing_subscriptions.md
-    - Creating invoices: usage/creating_invoices.md
-    - Running reports: usage/running_reports.md
-    - Webhooks: usage/webhooks.md
     - Manually syncing data with Stripe: usage/manually_syncing_with_stripe.md
-    - Cookbook: usage/cookbook.md
-  - Reference:
-    - Context Managers: reference/context_managers.md
-    - Decorators: reference/decorators.md
-    - Enumerations: reference/enums.md
-    - Managers: reference/managers.md
-    - Middleware: reference/middleware.md
-    - Models: reference/models.md
-    - Settings: reference/settings.md
-    - Utilities: reference/utils.md
+    - Creating individual charges: usage/creating_individual_charges.md
   - Project:
     - Contributing: project/contributing.md
     - Test Fixtures: project/test_fixtures.md
     - Credits: project/authors.md
-    - History: project/history.md
     - Support: project/support.md
     - Release Process: project/release_process.md
+  - Reference:
+    - Context Managers: reference/context_managers.md
+    - Enumerations: reference/enums.md
+    - Managers: reference/managers.md
+    - Models: reference/models.md
+    - Settings: reference/settings.md
+    - Utilities: reference/utils.md

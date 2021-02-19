@@ -43,8 +43,11 @@ class InvoiceTest(AssertStripeFksMixin, TestCase):
         self.default_expected_blank_fks = {
             "djstripe.Account.branding_logo",
             "djstripe.Account.branding_icon",
+            "djstripe.Charge.application_fee",
             "djstripe.Charge.dispute",
             "djstripe.Charge.latest_upcominginvoice (related name)",
+            "djstripe.Charge.on_behalf_of",
+            "djstripe.Charge.source_transfer",
             "djstripe.Charge.transfer",
             "djstripe.Customer.coupon",
             "djstripe.Customer.default_payment_method",
@@ -56,6 +59,7 @@ class InvoiceTest(AssertStripeFksMixin, TestCase):
             "djstripe.Subscription.default_payment_method",
             "djstripe.Subscription.default_source",
             "djstripe.Subscription.pending_setup_intent",
+            "djstripe.Subscription.schedule",
         }
 
     @patch(
@@ -1076,8 +1080,12 @@ class InvoiceTest(AssertStripeFksMixin, TestCase):
         autospec=True,
     )
     @patch("stripe.Charge.retrieve", return_value=deepcopy(FAKE_CHARGE), autospec=True)
+    @patch(
+        "stripe.Product.retrieve", return_value=deepcopy(FAKE_PRODUCT), autospec=True
+    )
     def test_invoice_without_plan(
         self,
+        product_retrieve_mock,
         charge_retrieve_mock,
         paymentmethod_card_retrieve_mock,
         payment_intent_retrieve_mock,

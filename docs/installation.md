@@ -27,12 +27,11 @@ endpoint from the urls.py step above (e.g.
 
 Add your Stripe keys and set the operating mode:
 
-    STRIPE_LIVE_PUBLIC_KEY = os.environ.get("STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>")
     STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
-    STRIPE_TEST_PUBLIC_KEY = os.environ.get("STRIPE_TEST_PUBLIC_KEY", "<your publishable key>")
     STRIPE_TEST_SECRET_KEY = os.environ.get("STRIPE_TEST_SECRET_KEY", "<your secret key>")
     STRIPE_LIVE_MODE = False  # Change to True in production
     DJSTRIPE_WEBHOOK_SECRET = "whsec_xxx"  # Get it from the section in the Stripe dashboard where you added the webhook endpoint
+    DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
 
 Add some payment plans via the Stripe.com dashboard.
 
@@ -40,12 +39,10 @@ Run the commands:
 
     python manage.py migrate
 
-    python manage.py djstripe_init_customers
+    python manage.py djstripe_sync_models
 
-    python manage.py djstripe_sync_plans_from_stripe
-
-See <https://dj-stripe.readthedocs.io/en/latest/stripe_elements_js.html>
-for notes about usage of the Stripe Elements frontend JS library.
+See [here](stripe_elements_js.md) for notes about usage of the Stripe Elements
+frontend JS library.
 
 ## Running Tests
 

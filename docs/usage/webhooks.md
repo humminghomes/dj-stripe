@@ -1,4 +1,14 @@
-# Webhooks
+# Using Stripe Webhooks
+
+## Available settings
+
+dj-stripe provides the following settings to tune how your webhooks work:
+
+-   [DJSTRIPE_WEBHOOK_URL](../reference/settings.md#djstripe_webhook_url-rwebhook)
+-   [DJSTRIPE_WEBHOOK_SECRET](../reference/settings.md#djstripe_webhook_secret)
+-   [DJSTRIPE_WEBHOOK_VALIDATION](../reference/settings.md#djstripe_webhook_validation-verify_signature)
+-   [DJSTRIPE_WEBHOOK_TOLERANCE](../reference/settings.md#djstripe_webhook_tolerance-300)
+-   [DJSTRIPE_WEBHOOK_EVENT_CALLBACK](../reference/settings.md#djstripe_webhook_event_callback-none)
 
 ## Using webhooks in dj-stripe
 
@@ -34,15 +44,15 @@ You can also handle different events in the same handler:
 ```py
 from djstripe import webhooks
 
-@webhooks.handler("plan", "product")
+@webhooks.handler("price", "product")
 def my_handler(event, **kwargs):
     print("Triggered webhook " + event.type)
 ```
 
-!!! warnring
+!!! warning
 
     In order to get registrations picked up, you need to put them in a
-    module is imported like models.py or make sure you import it manually.
+    module that is imported like models.py or make sure you import it manually.
 
 Webhook event creation and processing is now wrapped in a
 `transaction.atomic()` block to better handle webhook errors. This will
@@ -59,7 +69,7 @@ from djstripe import webhooks
 def do_something():
     pass  # send a mail, invalidate a cache, fire off a Celery task, etc.
 
-@webhooks.handler("plan", "product")
+@webhooks.handler("price", "product")
 def my_handler(event, **kwargs):
     transaction.on_commit(do_something)
 ```
