@@ -7,7 +7,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djstripe', '0020_invoice_add_index_on_status'),
+        ("djstripe", "0020_invoice_add_index_on_status"),
     ]
 
     operations = [
