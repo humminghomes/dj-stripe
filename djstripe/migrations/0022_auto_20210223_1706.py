@@ -6,20 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('djstripe', '0021_invoice_alert_metadata'),
+        ("djstripe", "0021_invoice_alert_metadata"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='invoice',
+            name="invoice",
             options={},
         ),
         migrations.RemoveIndex(
-            model_name='invoice',
-            name='djstripe_invoice_status_4d27deb1_idx',
+            model_name="invoice",
+            name="djstripe_invoice_status_4d27deb1_idx",
         ),
         migrations.AddIndex(
-            model_name='invoice',
-            index=models.Index(fields=['status'], name='djstripe_in_status_579158_idx'),
+            model_name="invoice",
+            index=models.Index(fields=["status"], name="djstripe_in_status_579158_idx"),
         ),
     ]
