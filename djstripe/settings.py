@@ -63,7 +63,7 @@ get_idempotency_key = get_callback_function(
     "DJSTRIPE_IDEMPOTENCY_KEY_CALLBACK", _get_idempotency_key
 )
 
-USE_NATIVE_JSONFIELD = getattr(settings, "DJSTRIPE_USE_NATIVE_JSONFIELD", False)
+USE_NATIVE_JSONFIELD = getattr(settings, "DJSTRIPE_USE_NATIVE_JSONFIELD", True)
 
 PRORATION_POLICY = getattr(settings, "DJSTRIPE_PRORATION_POLICY", False)
 CANCELLATION_AT_PERIOD_END = not getattr(settings, "DJSTRIPE_PRORATION_POLICY", False)
